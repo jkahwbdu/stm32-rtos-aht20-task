@@ -135,13 +135,13 @@ python docs/tools/make_zip.py
 
 ## GitHub
 
-仓库（推送后即为作业地址）：
+仓库地址（已上传，可直接作为作业地址）：
 
 ```text
 https://github.com/jkahwbdu/stm32-rtos-aht20-task
 ```
 
-首次推送：
+如需重新推送：
 
 ```bash
 git init

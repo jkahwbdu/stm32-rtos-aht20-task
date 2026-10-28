@@ -611,7 +611,7 @@ Start-Process $uv -ArgumentList @('-r', 'MDK-ARM\RTOS_AHT20_Task.uvprojx',
 | AI 对话记录 | `docs/AI对话记录.md` |
 | 博客稿 | `docs/博客-STM32F103-uCOSII-AHT20.md` |
 
-GitHub 仓库地址：`https://github.com/jkahwbdu/stm32-rtos-aht20-task`（推送方法见 README）。
+GitHub 仓库地址：`https://github.com/jkahwbdu/stm32-rtos-aht20-task`（已上传，含完整提交记录）。
 
 ---
 
