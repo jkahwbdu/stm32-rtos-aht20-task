@@ -17,7 +17,7 @@
 - 系统节拍 **1 ms**（`OS_TICKS_PER_SEC = 1000`），PendSV 最低优先级、SysTick 优先级 15。
 - 任务三的 2 s 周期用 `OSTimeGet()` 做补偿，长时间运行不漂移。
 - 串口用 **uC/OS-II 互斥量**保护，避免启动任务与采集任务输出交错。
-- AHT20 驱动同时支持 **硬件 I2C**（400 kHz）和 **软件模拟 I2C**（GPIO 开漏，约 350 kHz），
+- AHT20 驱动同时支持 **硬件 I2C**（400 kHz）和 **软件模拟 I2C**（GPIO 开漏，约 150–200 kHz），
   宏 `AHT20_USE_SOFT_I2C` 一键切换。
 - 任务一的“hello uc/OS!”形态保留：`APP_TASK3_SENSOR = 0` 时任务三每 2 s 发送问候语。
 

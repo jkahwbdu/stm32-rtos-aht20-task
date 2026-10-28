@@ -369,7 +369,7 @@ def fig_i2c_compare():
     d.text((470, 284), 'GPIO \u8bfb\u5199', font=F12, fill=ORANGE)
     label(d, (70, 500), '\u4f18\u70b9\uff1a\u4efb\u610f\u5f15\u811a\u3001\u6613\u4e8e\u8c03\u8bd5\u3001\u4e0d\u4f9d\u8d56\u5916\u8bbe', F12, GREEN)
     label(d, (70, 528), '\u7f3a\u70b9\uff1a\u5360 CPU\u3001\u901f\u5ea6\u9650\u5236\u3001\u65f6\u5e8f\u53d7\u5ef6\u65f6\u5f71\u54cd', F12, RED)
-    label(d, (70, 556), '\u672c\u5de5\u7a0b\uff1a~350 kHz\uff0c\u4ee3\u7801\u7ea6 180 \u884c', F12, GREY)
+    label(d, (70, 556), '\u672c\u5de5\u7a0b\uff1a~200 kHz\uff0c\u4ee3\u7801\u7ea6 180 \u884c', F12, GREY)
 
     # right: hardware
     box(d, (600, 100, 1120, 590), '', fill=(252, 252, 252), outline=(180, 190, 204))

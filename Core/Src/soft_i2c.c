@@ -18,8 +18,9 @@
 #define SDA_LOW()    HAL_GPIO_WritePin(AHT20_GPIO_Port, AHT20_SDA_Pin, GPIO_PIN_RESET)
 #define SDA_READ()   HAL_GPIO_ReadPin(AHT20_GPIO_Port, AHT20_SDA_Pin)
 
-/* ~1.4 us per half period at 72 MHz -> about 350 kHz.
- * Increase the loop count for longer wiring / slower sensors.
+/* About 2-3 us per half period at 72 MHz (HAL GPIO calls included),
+ * i.e. roughly 150-200 kHz SCL.  Increase the loop count for longer
+ * wiring or slower sensors.
  */
 static void SoftI2C_Delay(void)
 {

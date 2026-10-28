@@ -144,7 +144,7 @@ temp_centi = (raw_temp * 20000u) >> 20 - 5000;   /* 0.01 ℃  */
 > 边界值验证。**
 
 软件 I²C 用 GPIO 开漏模拟：SCL 低电平期间改 SDA，SCL 高电平期间采样；第 9 个时钟读 ACK，
-最后一个字节发 NACK。半周期延时 40 次 `__NOP()`，约 1.4 µs，SCL 约 350 kHz。硬件 I²C 用
+最后一个字节发 NACK。半周期延时 40 次 `__NOP()`，约 2.5–3 µs，SCL 约 150–200 kHz。硬件 I²C 用
 I2C1 400 kHz，直接调 `HAL_I2C_Master_Transmit/Receive`，两种实现通过宏切换：
 
 ```c
