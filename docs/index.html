@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STM32F103C8T6 移植 uC/OS-II 并接入 AHT20</title>
+<style>
+:root { --blue:#2b6cb0; --ink:#1f2933; --muted:#5b6b7c; }
+* { box-sizing: border-box; }
+body { margin:0; background:#eef2f7; color:var(--ink);
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif; line-height:1.85; }
+header { background:linear-gradient(135deg,#1a365d,#2b6cb0); color:#fff; padding:56px 20px 44px; }
+header .wrap { max-width:900px; margin:0 auto; }
+header .kicker { opacity:.8; letter-spacing:2px; font-size:13px; }
+header h1 { margin:10px 0 12px; font-size:30px; line-height:1.4; }
+header .meta { opacity:.85; font-size:14px; }
+main { max-width:900px; margin:-26px auto 40px; background:#fff; border-radius:12px;
+       padding:38px 46px 50px; box-shadow:0 10px 30px rgba(16,42,67,.12); }
+h2 { color:var(--blue); font-size:22px; margin:34px 0 12px; padding-left:12px;
+     border-left:5px solid var(--blue); }
+h3 { color:#2c5282; font-size:18px; margin:26px 0 10px; }
+p { margin:12px 0; }
+a { color:var(--blue); }
+img { max-width:100%; height:auto; display:block; margin:20px auto; border:1px solid #dbe3ec;
+      border-radius:8px; }
+code { background:#f2f5f8; color:#b03060; padding:2px 6px; border-radius:4px;
+       font-family:Consolas,monospace; font-size:.92em; }
+pre { background:#0f172a; color:#e2e8f0; padding:16px 18px; border-radius:8px;
+      overflow-x:auto; line-height:1.55; font-size:13.5px; }
+pre code { background:none; color:inherit; padding:0; }
+table { width:100%; border-collapse:collapse; margin:18px 0; font-size:14px; }
+th, td { border:1px solid #cdd8e5; padding:8px 10px; text-align:left; vertical-align:top; }
+th { background:#eef3fa; }
+blockquote { margin:16px 0; padding:10px 16px; background:#f7fafc;
+             border-left:4px solid #cbd5e0; color:#3d4852; }
+footer { max-width:900px; margin:0 auto 50px; color:var(--muted); font-size:13px;
+         text-align:center; }
+@media (max-width:640px){ main{padding:24px 18px; margin:-18px 10px 30px;} header h1{font-size:23px;} }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kicker">STM32 · RTOS · I²C</div>
+  <h1>STM32F103C8T6 移植 uC/OS-II 并接入 AHT20：从 PendSV 到 I²C 的完整踩坑记录</h1>
+  <div class="meta">蒋俊熙 · 2026-10-28 · 嵌入式实时操作系统课程作业</div>
+</div></header>
+<main>
+<blockquote>
+<p>课程作业整理，工程、报告与在线博客已开源。<br>
+平台建议：CSDN / 知乎；标签：STM32、uC/OS-II、RTOS、I2C、AHT20。</p>
+</blockquote>
+<h2>一、为什么选 uC/OS-II</h2>
+<p>作业要求“以 uC/OS 为例”移植到 STM32F103C8T6，建 3 个任务。uC/OS-III 功能更全，但源码大、<br>
+配置项多，初学移植容易在中断和启动文件上绕晕；uC/OS-II V2.91 结构清晰，Cortex-M3 的移植只涉及<br>
+<code>os_cpu.h</code>、<code>os_cpu_a.asm</code>、<code>os_cpu_c.c</code> 三个文件，更适合把“移植”这件事讲清楚。</p>
+<p>最终工程：</p>
+<ul>
+<li>MCU：STM32F103C8T6，72 MHz，64 KB Flash，20 KB SRAM；</li>
+<li>内核：uC/OS-II V2.91，节拍 1000 Hz（1 tick = 1 ms）；</li>
+<li>任务：LED1（1 s）、LED2（3 s）、AHT20 采集（2 s）；</li>
+<li>外设：I2C1（PB6/PB7）接 AHT20，USART1（PA9/PA10）115200 8N1 输出。</li>
+</ul>
+<p><img alt="系统总体框图" src="images/fig_system.png"></p>
+<h2>二、移植其实就三件事</h2>
+<h3>1. 数据类型与临界区</h3>
+<p>Cortex-M3 是 32 位，<code>OS_STK</code> 用 <code>unsigned int</code>，栈从高地址向低地址增长（<code>OS_STK_GROWTH=1</code>）。<br>
+临界区用<strong>方法 3</strong>：保存 PRIMASK、关中断、退出时恢复。</p>
+<pre><code class="language-c">#define OS_CRITICAL_METHOD   3
+#define OS_ENTER_CRITICAL()  {cpu_sr = OS_CPU_SR_Save();}
+#define OS_EXIT_CRITICAL()   {OS_CPU_SR_Restore(cpu_sr);}
+</code></pre>
+<p><code>OS_CPU_SR_Save</code> 在汇编里就是 <code>MRS R0, PRIMASK; CPSID I; BX LR</code>。</p>
+<h3>2. PendSV 上下文切换</h3>
+<p>Cortex-M3 异常入口会自动压 R0–R3、R12、LR、PC、xPSR，所以 PendSV 里只需保存 R4–R11：</p>
+<pre><code class="language-asm">MRS   R0, PSP
+SUBS  R0, R0, #0x20
+STM   R0, {R4-R11}
+LDR   R1, =OSTCBCur
+LDR   R1, [R1]
+STR   R0, [R1]          ; OSTCBCur-&gt;OSTCBStkPtr = SP
+</code></pre>
+<p>切换时恢复新任务的 R4–R11、<code>MSR PSP</code>，并 <code>ORR LR, LR, #0x04</code> 让异常返回使用 PSP。<br>
+<code>OSStartHighRdy</code> 负责把 PendSV 设为最低优先级、清 PSP、置 <code>OSRunning=TRUE</code>，再触发第一次切换。</p>
+<h3>3. SysTick 系统节拍</h3>
+<pre><code class="language-c">void OS_CPU_SysTickHandler(void)
+{
+    OSIntEnter();
+    OSTimeTick();
+    OSIntExit();
+}
+void OS_CPU_SysTickInit(void)
+{
+    (void)SysTick_Config(SystemCoreClock / OS_TICKS_PER_SEC);
+    NVIC_SetPriority(SysTick_IRQn, (1UL &lt;&lt; __NVIC_PRIO_BITS) - 1UL);
+}
+</code></pre>
+<h2>三、踩坑记录</h2>
+<h3>坑 1：源码里的反斜杠 include</h3>
+<p>从示例工程拷来的 uC/OS-II 源码里写死了：</p>
+<pre><code class="language-c">#include &lt;uCOS-II\Source\ucos_ii.h&gt;
+#include &lt;uCOS-II\Ports\ARM-Cortex-M3\RealView\os_cpu.h&gt;
+</code></pre>
+<p>换目录后直接报“cannot open source input file”。改成 <code>&lt;ucos_ii.h&gt;</code>、<code>&lt;os_cpu.h&gt;</code>，<br>
+再把 <code>Source</code>、<code>Ports</code> 加进 Include Path 即可。</p>
+<h3>坑 2：SysTick 被 HAL 占用，且优先级是 0</h3>
+<p><code>HAL_Init()</code> 默认把 SysTick 优先级设为 0（最高），而 uC/OS-II 要求节拍中断优先级最低。<br>
+解决办法是共用 SysTick，但在 <code>OS_CPU_SysTickInit()</code> 里把优先级改成 15，并在中断里同时调用<br>
+<code>HAL_IncTick()</code> 和 <code>OS_CPU_SysTickHandler()</code>：</p>
+<pre><code class="language-c">void SysTick_Handler(void)
+{
+    HAL_IncTick();
+    OS_CPU_SysTickHandler();
+}
+</code></pre>
+<p>这样 <code>HAL_Delay()</code> / HAL 超时在 RTOS 下仍然可用；但任务里不要用 <code>HAL_Delay()</code> 做长延时，<br>
+要改用 <code>OSTimeDly()</code> 主动让出 CPU。</p>
+<h3>坑 3：链接报 Undefined symbol OSTaskReturnHook</h3>
+<p>uC/OS-II 2.91 比 2.86 多了一个“任务函数意外返回”钩子。2.86 的 <code>os_cpu_c.c</code> 里没有这个函数，<br>
+补一个空实现即可：</p>
+<pre><code class="language-c">void OSTaskReturnHook(OS_TCB *ptcb) { (void)ptcb; }
+</code></pre>
+<h3>坑 4：PendSV 优先级不是最低</h3>
+<p><code>OSStartHighRdy</code> 会把 PendSV 设为 0xFF，但如果你在别处重新配置了 NVIC，要保证 PendSV 仍然最低，<br>
+否则切换可能发生在中断嵌套中间，出现“任务栈看起来被破坏”的怪现象。</p>
+<h2>四、三个任务怎么排</h2>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>优先级</th>
+<th>周期</th>
+<th>工作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Start</td>
+<td>3</td>
+<td>一次</td>
+<td>打印启动信息、<code>OSStatInit()</code>、创建任务、删除自己</td>
+</tr>
+<tr>
+<td>AHT20</td>
+<td>4</td>
+<td>2 s</td>
+<td>读传感器、串口输出</td>
+</tr>
+<tr>
+<td>LED1</td>
+<td>5</td>
+<td>1 s</td>
+<td>翻转 PC13</td>
+</tr>
+<tr>
+<td>LED2</td>
+<td>6</td>
+<td>3 s</td>
+<td>翻转 PB12</td>
+</tr>
+</tbody>
+</table>
+<p>原则：周期越短、实时性越高，优先级越高。AHT20 一次读取要占 I²C 约 1 ms、转换 80 ms，<br>
+放在 LED 之前，保证采样时刻；转换期间用 <code>OSTimeDly(80)</code> 让出 CPU，LED 照常闪。</p>
+<p><img alt="任务时序" src="images/fig_tasks.png"></p>
+<h2>五、AHT20：软 I²C 与硬 I²C 都实现一遍</h2>
+<p>AHT20 地址 0x38（写 0x70、读 0x71）。流程：</p>
+<ol>
+<li>上电等 40 ms，读状态字节，bit3（0x08）为 0 时写 <code>0xBE 0x08 0x00</code> 校准；</li>
+<li>写 <code>0xAC 0x33 0x00</code> 触发，等 80 ms；</li>
+<li>读 7 字节，Byte0 状态，Byte1–3 湿度 20 bit，Byte3 低 4 bit + Byte4–5 温度 20 bit。</li>
+</ol>
+<p>换算用定点，避免浮点 printf：</p>
+<pre><code class="language-c">hum_centi  = (raw_hum  * 10000u) &gt;&gt; 20;          /* 0.01 %RH */
+temp_centi = (raw_temp * 20000u) &gt;&gt; 20 - 5000;   /* 0.01 ℃  */
+</code></pre>
+<blockquote>
+<p>这里我最初把温度系数写成了 2000，结果 25 ℃ 算成 −42 ℃。用 <code>raw_temp=394999</code> 回代：<br>
+<code>394999×20000&gt;&gt;20 = 7534</code>，减 5000 得 2534，即 25.34 ℃，才是对的。<strong>公式一定要用数据手册的<br>
+边界值验证。</strong></p>
+</blockquote>
+<p>软件 I²C 用 GPIO 开漏模拟：SCL 低电平期间改 SDA，SCL 高电平期间采样；第 9 个时钟读 ACK，<br>
+最后一个字节发 NACK。半周期延时 40 次 <code>__NOP()</code>，约 2.5–3 µs，SCL 约 150–200 kHz。硬件 I²C 用<br>
+I2C1 400 kHz，直接调 <code>HAL_I2C_Master_Transmit/Receive</code>，两种实现通过宏切换：</p>
+<pre><code class="language-c">#define AHT20_USE_SOFT_I2C   0   /* 0 = 硬件 I2C1，1 = 软件模拟 */
+</code></pre>
+<p><img alt="AHT20 时序" src="images/fig_i2c.png"></p>
+<h2>六、把第 3 个任务改成采集</h2>
+<p>任务一阶段第 3 个任务每 2 s 发“hello uc/OS! 欢迎来到 RTOS 多任务环境！”；任务三要求改成<br>
+每 2 s 采集温湿度。工程用 <code>APP_TASK3_SENSOR</code> 宏保留两种形态（0 = 问候语，1 = 采集），<br>
+启动横幅也随之变化，一份代码能复现两个阶段。</p>
+<p>周期补偿：</p>
+<pre><code class="language-c">t0 = OSTimeGet();
+/* 采集 + 输出 */
+elapsed = OSTimeGet() - t0;
+if (elapsed &lt; 2000) OSTimeDly(2000 - elapsed);
+</code></pre>
+<p>串口用互斥量保护（启动任务和采集任务都会打印）：</p>
+<pre><code class="language-c">OSMutexPend(uart_lock, 0, &amp;err);
+vsnprintf(buf, sizeof buf, fmt, ap);
+HAL_UART_Transmit(&amp;huart1, (uint8_t *)buf, len, 100);
+OSMutexPost(uart_lock);
+</code></pre>
+<p><img alt="串口输出" src="images/fig_serial.png"></p>
+<h2>七、编译结果</h2>
+<pre><code class="language-text">Program Size: Code=17988  RO-data=1132  RW-data=72  ZI-data=7048
+0 Error(s), 0 Warning(s)
+</code></pre>
+<p>Flash 约 18.7 KB（29.2%），RAM 约 7.0 KB（34.8%），内核约 6 KB，HAL + 驱动 + 应用约 13 KB。<br>
+硬件 I²C 与软件 I²C 两种配置都能独立编译通过。</p>
+<h2>八、总结</h2>
+<p>移植 uC/OS-II 不难，难在细节：SysTick 与 HAL 共用、PendSV 优先级、2.91 的新钩子、栈大小、<br>
+临界区长度。把这三件事（临界区、上下文切换、系统节拍）做对，内核就能跑；剩下的都是配置和调试。<br>
+I²C 部分建议先用软件模拟把时序“看见”，再换硬件外设，对比一次就真正理解了协议。</p>
+<h2>仓库与报告</h2>
+<ul>
+<li>GitHub：<code>https://github.com/jkahwbdu/stm32-rtos-aht20-task</code></li>
+<li>在线博客：https://jkahwbdu.github.io/stm32-rtos-aht20-task/</li>
+<li>实验报告：<code>docs/STM32_RTOS_AHT20实验报告.pdf</code></li>
+<li>参考：</li>
+<li>野火《STM32F103 开发指南》第 23 章 I²C 读写 EEPROM</li>
+<li>AHT20 产品手册（奥松电子）</li>
+<li>Micrium uC/OS-II V2.91 源码</li>
+<li>STM32F10xxx Cortex-M3 编程手册（PM0056）</li>
+</ul>
+<blockquote>
+<p>配图在工程 <code>docs/images/</code> 下，上传 CSDN 后在编辑器里重新插入即可。</p>
+</blockquote>
+</main>
+<footer>
+  工程源码：<a href="https://github.com/jkahwbdu/stm32-rtos-aht20-task">github.com/jkahwbdu/stm32-rtos-aht20-task</a>
+</footer>
+</body>
+</html>

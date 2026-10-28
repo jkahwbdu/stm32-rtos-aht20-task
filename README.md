@@ -122,6 +122,7 @@ Flash ≈ 18.7 KB / 64 KB（29.2%），RAM ≈ 7.0 KB / 20 KB（34.8%）。
   （Markdown 源：[`.md`](docs/STM32_RTOS_AHT20实验报告.md)）
 - AI 辅助学习记录：[`docs/AI对话记录.md`](docs/AI对话记录.md)
 - 博客稿（可直接发 CSDN）：[`docs/博客-STM32F103-uCOSII-AHT20.md`](docs/博客-STM32F103-uCOSII-AHT20.md)
+- 在线博客（GitHub Pages）：https://jkahwbdu.github.io/stm32-rtos-aht20-task/
 - 插图脚本：`docs/tools/make_figs.py`；报告转换：`docs/tools/md2html.py`
 
 ## 提交

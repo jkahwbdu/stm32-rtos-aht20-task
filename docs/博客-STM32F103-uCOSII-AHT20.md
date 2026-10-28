@@ -1,6 +1,6 @@
 # STM32F103C8T6 移植 uC/OS-II 并接入 AHT20：从 PendSV 到 I²C 的完整踩坑记录
 
-> 课程作业整理，工程与报告已开源。博客发布后把地址填到文末“仓库与报告”。
+> 课程作业整理，工程、报告与在线博客已开源。
 > 平台建议：CSDN / 知乎；标签：STM32、uC/OS-II、RTOS、I2C、AHT20。
 
 ## 一、为什么选 uC/OS-II
@@ -198,6 +198,7 @@ I²C 部分建议先用软件模拟把时序“看见”，再换硬件外设，
 ## 仓库与报告
 
 - GitHub：`https://github.com/jkahwbdu/stm32-rtos-aht20-task`
+- 在线博客：https://jkahwbdu.github.io/stm32-rtos-aht20-task/
 - 实验报告：`docs/STM32_RTOS_AHT20实验报告.pdf`
 - 参考：
   - 野火《STM32F103 开发指南》第 23 章 I²C 读写 EEPROM
