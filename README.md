@@ -56,6 +56,7 @@ Program Size: Code=17988  RO-data=1132  RW-data=72  ZI-data=7048
 Flash ≈ 18.7 KB / 64 KB（29.2%），RAM ≈ 7.0 KB / 20 KB（34.8%）。
 烧录文件：`MDK-ARM/RTOS_AHT20_Task/RTOS_AHT20_Task.hex`。
 
+串口：DAP-Link 自带虚拟串口（本机为 **COM7 / USB Serial Device**），也可以用 CH340 接 PA9/PA10。
 串口助手设为 **115200 8N1**，上电后可见：
 
 ```text
@@ -68,13 +69,16 @@ Flash ≈ 18.7 KB / 64 KB（29.2%），RAM ≈ 7.0 KB / 20 KB（34.8%）。
   hello uc/OS! 欢迎来到RTOS多任务环境！
 ==================================================
 [boot] AHT20 calibrated, sampling every 2 s
-[00:00.128] #01  T=+25.34 C   H=48.20 %RH
-[00:02.130] #02  T=+25.36 C   H=48.26 %RH
-...
-         CPU usage: 3 %
+[02:42.259] #82  T=+24.30 C   H=63.03 %RH
+[02:44.259] #83  T=+24.27 C   H=62.67 %RH
+[02:46.259] #84  T=+24.27 C   H=62.40 %RH
+[02:48.259] #85  T=+24.24 C   H=62.34 %RH
+         CPU usage: 1 %
+[02:50.259] #86  T=+24.20 C   H=62.34 %RH
 ```
 
-> 温度/湿度为示例值，实际读数随环境变化；时间戳由 `OSTimeGet()` 产生。
+> 2026-10-28 实物实测：环境约 24.2 ℃ / 62.4 %RH，相邻两行时间戳相差 2000 ms，CPU 占用 1%。
+> 原始日志见 [`docs/serial_log_com7.txt`](docs/serial_log_com7.txt)；不同环境读数会变化。
 
 ## 目录结构
 

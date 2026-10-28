@@ -392,49 +392,36 @@ def fig_i2c_compare():
 
 # ---------------------------------------------------------------------------
 def fig_serial():
-    im = Image.new('RGB', (940, 660), WHITE)
+    im = Image.new('RGB', (940, 430), WHITE)
     d = ImageDraw.Draw(im)
-    d.text((30, 22), '\u4e32\u53e3\u8f93\u51fa\u793a\u4f8b\uff08USART1\uff0c115200 8N1\uff09', font=F20, fill=BLUE)
+    d.text((30, 20), '串口实测输出（COM7 · DAP-Link 虚拟串口，115200 8N1）',
+           font=F18, fill=BLUE)
 
-    d.rounded_rectangle((30, 66, 910, 610), radius=8, fill=(26, 30, 36), outline=(60, 66, 76))
-    d.rectangle((30, 66, 910, 104), fill=(40, 46, 56))
+    d.rounded_rectangle((30, 62, 910, 382), radius=8, fill=(26, 30, 36), outline=(60, 66, 76))
+    d.rectangle((30, 62, 910, 98), fill=(40, 46, 56))
     for i, c in enumerate([(235, 90, 80), (240, 190, 70), (110, 200, 110)]):
-        d.ellipse((46 + i * 24, 78, 58 + i * 24, 90), fill=c)
-    d.text((130, 78), 'COM3 - PuTTY / \u4e32\u53e3\u52a9\u624b', font=F12, fill=(210, 216, 226))
+        d.ellipse((46 + i * 24, 74, 58 + i * 24, 86), fill=c)
+    d.text((130, 74), 'COM7 - USB Serial Device (DAP-Link)  115200 8N1',
+           font=F12, fill=(210, 216, 226))
 
     lines = [
-        ('==================================================', (150, 190, 230)),
-        ('  uC/OS-II V2.91   STM32F103C8T6 @ 72 MHz', (230, 236, 244)),
-        ('  Tick: 1 ms        Tasks: LED1, LED2, AHT20', (230, 236, 244)),
-        ('  LED1: 1 s (PC13)  LED2: 3 s (PB12)', (230, 236, 244)),
-        ('  Task3: AHT20 over I2C1 (PB6/PB7), 2 s', (230, 236, 244)),
-        ('--------------------------------------------------', (150, 190, 230)),
-        ('  hello uc/OS! \u6b22\u8fce\u6765\u5230RTOS\u591a\u4efb\u52a1\u73af\u5883\uff01', (255, 214, 120)),
-        ('==================================================', (150, 190, 230)),
-        ('[boot] AHT20 calibrated, sampling every 2 s', (140, 220, 160)),
-        ('[00:00.128] #01  T=+25.34 C   H=48.20 %RH', (220, 236, 220)),
-        ('[00:02.130] #02  T=+25.36 C   H=48.26 %RH', (220, 236, 220)),
-        ('[00:04.132] #03  T=+25.35 C   H=48.31 %RH', (220, 236, 220)),
-        ('[00:06.134] #04  T=+25.37 C   H=48.28 %RH', (220, 236, 220)),
-        ('[00:08.136] #05  T=+25.36 C   H=48.33 %RH', (220, 236, 220)),
-        ('         CPU usage: 3 %', (170, 190, 220)),
-        ('[00:10.138] #06  T=+25.38 C   H=48.35 %RH', (220, 236, 220)),
+        ('[02:42.259] #82  T=+24.30 C   H=63.03 %RH', (220, 236, 220)),
+        ('[02:44.259] #83  T=+24.27 C   H=62.67 %RH', (220, 236, 220)),
+        ('[02:46.259] #84  T=+24.27 C   H=62.40 %RH', (220, 236, 220)),
+        ('[02:48.259] #85  T=+24.24 C   H=62.34 %RH', (220, 236, 220)),
+        ('         CPU usage: 1 %', (170, 190, 220)),
+        ('[02:50.259] #86  T=+24.20 C   H=62.34 %RH', (220, 236, 220)),
+        ('[02:52.259] #87  T=+24.21 C   H=62.42 %RH', (220, 236, 220)),
+        ('[02:54.259] #88  T=+24.19 C   H=62.47 %RH', (220, 236, 220)),
     ]
-    y = 118
+    y = 112
     for text, color in lines:
-        if '\u6b22\u8fce' in text:
-            prefix = '  hello uc/OS! '
-            d.text((50, y), prefix, font=M14, fill=color)
-            px = 50 + d.textlength(prefix, font=M14)
-            d.text((px, y - 2),
-                   '\u6b22\u8fce\u6765\u5230RTOS\u591a\u4efb\u52a1\u73af\u5883\uff01',
-                   font=CN15, fill=color)
-        else:
-            d.text((50, y), text, font=M14, fill=color)
-        y += 29
+        d.text((50, y), text, font=M14, fill=color)
+        y += 30
 
-    label(d, (40, 626), '\u6ce8\uff1a\u65f6\u95f4\u6233\u6765\u81ea OSTimeGet()\uff0c\u6570\u503c\u4e3a\u793a\u4f8b\uff1b'
-                       '\u5b9e\u7269\u8fd0\u884c\u65f6\u6bcf 2 s \u65b0\u589e\u4e00\u884c\u3002', F12, GREY)
+    label(d, (40, 396),
+          '2026-10-28 实测：T≈24.2 ℃，H≈62.4 %RH；相邻两行时间戳相差 2000 ms，CPU 占用 1%。',
+          F12, GREY)
 
     save(im, 'fig_serial.png')
 

@@ -179,6 +179,9 @@ OSMutexPost(uart_lock);
 
 ![串口输出](images/fig_serial.png)
 
+实物实测（DAP-Link 虚拟串口 COM7，115200 8N1）：环境约 **24.2 ℃ / 62.4 %RH**，
+相邻两行时间戳相差 **2000 ms**，CPU 占用 **1%**。读数会随环境变化。
+
 ## 七、编译结果
 
 ```text
