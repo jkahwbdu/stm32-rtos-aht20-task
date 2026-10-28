@@ -1,0 +1,41 @@
+# Keil MDK build output
+MDK-ARM/RTOS_AHT20_Task/
+MDK-ARM/DebugConfig/
+MDK-ARM/Listings/
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.bin
+*.elf
+*.map
+*.lst
+*.dep
+*.lnp
+*.sct
+*.iex
+*.build_log.htm
+build.log
+build_soft.log
+
+# Keil per-user settings / backups
+*.uvguix.*
+*.uvoptx
+*.bak
+*.uvgui.*
+
+# Generated / temporary files
+dist/
+docs/images/_pdf/
+docs/STM32_RTOS_AHT20实验报告.html
+docs/_check/
+docs/_final/
+docs/_pages/
+__pycache__/
+*.pyc
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
