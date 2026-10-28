@@ -177,9 +177,9 @@ HAL_UART_Transmit(&huart1, (uint8_t *)buf, len, 100);
 OSMutexPost(uart_lock);
 ```
 
-![串口输出](images/fig_serial.png)
+![串口输出](images/hw_serial_com7.png)
 
-实物实测（DAP-Link 虚拟串口 COM7，115200 8N1）：环境约 **24.2 ℃ / 62.4 %RH**，
+实物实测（DAP-Link 虚拟串口 COM7，115200 8N1）：环境约 **23.5 ℃ / 64.8 %RH**，
 相邻两行时间戳相差 **2000 ms**，CPU 占用 **1%**。读数会随环境变化。
 
 ## 七、编译结果

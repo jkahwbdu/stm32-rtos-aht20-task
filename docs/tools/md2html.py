@@ -38,7 +38,7 @@ blockquote { border-left: 4px solid #cbd5e0; margin: 10px 0; padding: 7px 14px;
 blockquote p { margin: 4px 0; }
 img { max-width: 100%; max-height: 112mm; width: auto; height: auto;
       display: block; margin: 12px auto; page-break-inside: avoid; }
-img[src*="fig_serial"] { width: 78%; }
+img[src*="hw_serial"] { width: 92%; max-height: none; }
 img[src*="fig_tasks"] { width: 96%; }
 img[src*="fig_memory"] { width: 82%; }
 img[src*="fig_boot_flow"] { width: 94%; max-height: none; }

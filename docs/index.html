@@ -200,8 +200,8 @@ vsnprintf(buf, sizeof buf, fmt, ap);
 HAL_UART_Transmit(&amp;huart1, (uint8_t *)buf, len, 100);
 OSMutexPost(uart_lock);
 </code></pre>
-<p><img alt="串口输出" src="images/fig_serial.png"></p>
-<p>实物实测（DAP-Link 虚拟串口 COM7，115200 8N1）：环境约 <strong>24.2 ℃ / 62.4 %RH</strong>，<br>
+<p><img alt="串口输出" src="images/hw_serial_com7.png"></p>
+<p>实物实测（DAP-Link 虚拟串口 COM7，115200 8N1）：环境约 <strong>23.5 ℃ / 64.8 %RH</strong>，<br>
 相邻两行时间戳相差 <strong>2000 ms</strong>，CPU 占用 <strong>1%</strong>。读数会随环境变化。</p>
 <h2>七、编译结果</h2>
 <pre><code class="language-text">Program Size: Code=17988  RO-data=1132  RW-data=72  ZI-data=7048
